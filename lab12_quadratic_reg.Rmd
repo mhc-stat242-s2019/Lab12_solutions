@@ -1,0 +1,85 @@
+---
+title: "Lab 12: Quadratic Regression"
+output:
+  pdf_document:
+    fig_height: 2.8
+    fig_width: 6
+  html_document:
+    fig_height: 3
+    fig_width: 5
+  word_document:
+    fig_height: 3
+    fig_width: 5
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{vwcol}
+geometry: margin=0.5in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE)
+library(ggplot2)
+library(readr)
+library(dplyr)
+library(gridExtra)
+options(width = 100)
+```
+
+## Electricity Demand
+
+We have data from the Australian Energy Market Operator and the Australian Bureau of Meteorology with daily electricity demand for Victoria, Australia, in 2014.  For each day, we have:
+
+ * `Demand`: Total electricity demand in GW for Victoria, Australia
+ * `WorkDay`: "WorkDay" for work days, and "Other" for non work days
+ * `Temperature`: The daily high temeprature in degrees Celsius
+
+```{r, echo = FALSE, message = FALSE}
+elecdaily <- read_csv("http://www.evanlray.com/data/fpp2/elecdaily.csv")
+head(elecdaily)
+```
+
+As always with data collected over time, we should be suspicious of the condition of independence.  For today, let's set that aside and focus on an analysis of the relationships between these variables.
+
+#### 1. Make a plot of the data, treating Demand as the response and Temperature as the explanatory variable.
+
+```{r}
+ggplot(data = elecdaily, mapping = aes(x = Temperature, y = Demand)) + 
+  geom_point()
+```
+
+#### 2. Fit an appropriate regression model using Temperature as an explanatory variable.  Print a summary of your model fit.
+
+```{r}
+qf <- lm(Demand ~ poly(Temperature, degree = 2, raw = TRUE), data = elecdaily)
+summary(qf)
+```
+
+#### 3. How good are the predictions of electricity demand from this model?  Answer based on the residual standard error.
+
+Approximately 95% of the fitted/predicted values for electricity demand are within plus or minus 40 GW of the actual electricity demand.
+
+#### 4. Write down the equation for the estimated mean electricity demand as a function of temperature.
+
+$\hat{\mu}(Demand | Temperature) = 387.69 - 15.28 Temperature + 0.32 Temperature^2$
+
+#### 5. Make another plot of the data, this time coloring each day according to whether it is a work day or not.
+
+```{r}
+ggplot(data = elecdaily, mapping = aes(x = Temperature, y = Demand, color = WorkDay)) + 
+  geom_point()
+```
+
+#### 6. Fit an appropriate model that uses both Temperature and WorkDay as explanatory variables.  Do the data indicate any need for an interaction between the explanatory variables?
+
+```{r}
+lm_fit <- lm(Demand ~ WorkDay * poly(Temperature, degree = 2, raw = TRUE), data = elecdaily)
+summary(lm_fit)
+lm_fit2 <- lm(Demand ~ WorkDay + poly(Temperature, degree = 2, raw = TRUE), data = elecdaily)
+anova(lm_fit2, lm_fit)
+```
+
+The data do not provide evidence of a need for an interaction between WorkDay and Temperature or Temperature squared.
+
+#### 7. How good are the predictions of electricity demand from this model?  Answer based on the residual standard error.
+
+Approximately 95% of the fitted/predicted values for electricity demand are within plus or minus 21.6 GW of the actual electricity demand.
